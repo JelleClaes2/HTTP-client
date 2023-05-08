@@ -1,1 +1,21 @@
 # POINTS
+- [ ] TCP server luistert op poort 22
+- [ ] TCP server accepteert meerdere verbindingen
+- [ ] TCP server achterhaalt IP adres van client
+- [ ] TCP server logt IP adres in logs
+- [ ] TCP server start een HTTP client per nieuwe verbinding
+- [ ] HTTP client maakt een TCP verbinding met IP Geolocation API
+- [ ] HTTP client stuurt een correcte HTTP GET request
+- [ ] HTTP client ontvangt de reactie van de HTTP server
+- [ ] HTTP client extraheert zuiver de volledige json reactie
+- [ ] HTTP client logt geolocatie in logs
+- [ ] HTTP client sluit de verbinding zuiver af
+- [ ] TCP server accepteert gegevens van client en logt ze in logs
+- [ ] TCP server stuurt zoveel mogelijk gegevens naar de openstaande verbinding
+- [ ] TCP server houdt een teller bij hoeveel gegevens succesvol zijn afgeleverd en logt deze bij het sluiten van de verbinding in logs
+- [ ] TCP server sluit de verbinding nadat de client de verbinding sluit
+- [ ] TCP server kan meerdere verbindingen simultaan verwerken
+- [ ] Het geheel werkt volledig zonder crashen en er wordt efficiënt met de resources (i.e. memory en sockets) van de computer gebruik gemaakt
+- [ ] code staat professioneel op GITHUB (i.e. meerdere nuttige commits en uitleg)
+- [ ] Het geheel werkt en is beschikbaar op het internet (e.g. thuis m.b.v. NAT of werkt op publieke server)
+- [ ] mooi extra eens de rest werkt: correcte documentatie a.d.h.v. flowchart, maak gebruik van pthread of IP's worden in een look-up tabel bewaard (e.g. linked-list) om herhalende aanvallen te kunnen loggen

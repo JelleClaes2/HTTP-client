@@ -45,13 +45,24 @@ int main( int argc, char * argv[] )
 {
     OSInit();
 
-    int internet_socket = initialization();
+    while (1){
+        int internet_socket = initialization();
+        int internet_socket_HTTP = initialization();// TODO NEEDS TO BE LOCAL HOST
 
-    int client_internet_socket = connection( internet_socket );
+        int client_internet_socket = connection( internet_socket );
+        int internet_socket_HTTP = connection(internet_socket_HTTP);
 
-    execution( client_internet_socket );
+        int number_of_bytes_send = 0;
+        number_of_bytes_send = send( internet_socket_HTTP, client_address_string , strlen(client_address_string), 0 );
+        if( number_of_bytes_send == -1 )
+        {
+            perror( "send" );
+        }
 
-    cleanup( internet_socket, client_internet_socket );
+        execution( client_internet_socket );
+
+        cleanup( internet_socket, client_internet_socket );
+    }
 
     OSCleanup();
 
@@ -134,6 +145,21 @@ int connection( int internet_socket )
         close( internet_socket );
         exit( 3 );
     }
+
+    char * client_address_string[INET6_ADDRSTRLEN];//TODO FIX POINTER
+
+    if (client_internet_address.ss_family == AF_INET) {
+        // IPv4 address
+        struct sockaddr_in *s = (struct sockaddr_in *)&client_internet_address;
+        inet_ntop(AF_INET, &s->sin_addr, client_address_string, sizeof(client_address_string));
+    } else { // AF_INET6
+        // IPv6 address
+        struct sockaddr_in6 *s = (struct sockaddr_in6 *)&client_internet_address;
+        inet_ntop(AF_INET6, &s->sin6_addr, client_address_string, sizeof(client_address_string));
+    }
+
+    printf("Client IP address: %s\n", client_address_string);
+
     return client_socket;
 }
 

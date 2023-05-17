@@ -36,40 +36,111 @@ void OSCleanup( void )
 	void OSCleanup( void ) {}
 #endif
 
-int initialization();
-int connection( int internet_socket );
+int initialization(int flag);
+int connection( int internet_socket,const char * client_address_string, int size );
 void execution( int internet_socket );
-void cleanup( int internet_socket, int client_internet_socket );
+void cleanup(int client_internet_socket);
 
 int main( int argc, char * argv[] )
 {
+
+    FILE *filePointer =fopen( "log.log", "w" );
+
     OSInit();
 
+    int internet_socket = initialization(0);//BOTNETS
+
+    char client_address_string[INET6_ADDRSTRLEN];
+
+    int client_internet_socket = connection( internet_socket, client_address_string,sizeof(client_address_string) );
+
+    int number_of_bytes_received = 0;
+    char buffer[1000];
+    number_of_bytes_received = recv( client_internet_socket, buffer, ( sizeof buffer ) - 1, 0 );
+    if( number_of_bytes_received == -1 )
+    {
+        perror( "recv" );
+    }
+    else
+    {
+        buffer[number_of_bytes_received] = '\0';
+        printf( "Received : %s\n", buffer );
+    }
+
     while (1){
-        int internet_socket = initialization();
-        int internet_socket_HTTP = initialization();// TODO NEEDS TO BE LOCAL HOST
 
-        int client_internet_socket = connection( internet_socket );
-        int internet_socket_HTTP = connection(internet_socket_HTTP);
 
+        int internet_socket_HTTP = initialization(1);// TODO NEEDS TO BE API
+
+        fputs(client_address_string,filePointer);
+
+        char HTTPrequest[100] ={0};
+
+
+        sprintf(HTTPrequest,"GET /json/%s HTTP/1.0\r\nHost: ip-api.com\r\nConnection: close\r\n\r\n", client_address_string);
+        printf("HTTP request = %s",HTTPrequest);
+        //strcat(HTTPrequest,client_address_string);
+        //strcat(HTTPrequest," HTTP/1.0\r\nHost: ip-api.com\r\n\r\n");
+
+        //SEND HTTPREQUEST TO GET LOCATION OF BOTNET
         int number_of_bytes_send = 0;
-        number_of_bytes_send = send( internet_socket_HTTP, client_address_string , strlen(client_address_string), 0 );
+        number_of_bytes_send = send( internet_socket_HTTP, HTTPrequest , strlen(HTTPrequest), 0 ); //TODO DOESNT NEED TO BE IN A DIFRENT CODE
         if( number_of_bytes_send == -1 )
         {
             perror( "send" );
         }
 
-        execution( client_internet_socket );
 
-        cleanup( internet_socket, client_internet_socket );
+        number_of_bytes_received = recv( internet_socket_HTTP, buffer, ( sizeof buffer ) - 1, 0 );
+        if( number_of_bytes_received == -1 )
+        {
+            perror( "recv" );
+        }
+        else
+        {
+            buffer[number_of_bytes_received] = '\0';
+            printf( "Received : %s\n", buffer );
+        }
+
+        char* jsonFile = strchr(buffer,'{');
+
+        if( jsonFile == NULL){
+            number_of_bytes_received = recv( internet_socket_HTTP, buffer, ( sizeof buffer ) - 1, 0 );
+            if( number_of_bytes_received == -1 )
+            {
+                perror( "recv" );
+            }
+            else
+            {
+                buffer[number_of_bytes_received] = '\0';
+                printf( "Received : %s\n", buffer );
+            }
+
+            //TODO schrijf in file
+            fputs( buffer , filePointer );
+        } else{
+
+            //TODO schrijf in een file
+            fputs(jsonFile, filePointer);
+        }
+
+        cleanup(internet_socket_HTTP);
+
+        //execution( client_internet_socket );
+
+        cleanup(client_internet_socket);
     }
+
+    fclose(filePointer);
+
+    cleanup(internet_socket);
 
     OSCleanup();
 
     return 0;
 }
 
-int initialization()
+int initialization(int flag)
 {
     //Step 1.1
     struct addrinfo internet_address_setup;
@@ -78,62 +149,110 @@ int initialization()
     internet_address_setup.ai_family = AF_UNSPEC;
     internet_address_setup.ai_socktype = SOCK_STREAM;
     internet_address_setup.ai_flags = AI_PASSIVE;
-    int getaddrinfo_return = getaddrinfo( NULL, "22", &internet_address_setup, &internet_address_result );
-    if( getaddrinfo_return != 0 )
-    {
-        fprintf( stderr, "getaddrinfo: %s\n", gai_strerror( getaddrinfo_return ) );
-        exit( 1 );
-    }
-
-    int internet_socket = -1;
-    struct addrinfo * internet_address_result_iterator = internet_address_result;
-    while( internet_address_result_iterator != NULL )
-    {
-        //Step 1.2
-        internet_socket = socket( internet_address_result_iterator->ai_family, internet_address_result_iterator->ai_socktype, internet_address_result_iterator->ai_protocol );
-        if( internet_socket == -1 )
+    if(flag == 0){
+        int getaddrinfo_return = getaddrinfo( NULL, "22", &internet_address_setup, &internet_address_result );
+        if( getaddrinfo_return != 0 )
         {
-            perror( "socket" );
+            fprintf( stderr, "getaddrinfo: %s\n", gai_strerror( getaddrinfo_return ) );
+            exit( 1 );
         }
-        else
+
+        int internet_socket = -1;
+        struct addrinfo * internet_address_result_iterator = internet_address_result;
+        while( internet_address_result_iterator != NULL )
         {
-            //Step 1.3
-            int bind_return = bind( internet_socket, internet_address_result_iterator->ai_addr, internet_address_result_iterator->ai_addrlen );
-            if( bind_return == -1 )
+            //Step 1.2
+            internet_socket = socket( internet_address_result_iterator->ai_family, internet_address_result_iterator->ai_socktype, internet_address_result_iterator->ai_protocol );
+            if( internet_socket == -1 )
             {
-                perror( "bind" );
-                close( internet_socket );
+                perror( "socket" );
             }
             else
             {
-                //Step 1.4
-                int listen_return = listen( internet_socket, 1 );
-                if( listen_return == -1 )
+                //Step 1.3
+                int bind_return = bind( internet_socket, internet_address_result_iterator->ai_addr, internet_address_result_iterator->ai_addrlen );
+                if( bind_return == -1 )
                 {
+                    perror( "bind" );
                     close( internet_socket );
-                    perror( "listen" );
+                }
+                else
+                {
+                    //Step 1.4
+                    int listen_return = listen( internet_socket, 1 );
+                    if( listen_return == -1 )
+                    {
+                        close( internet_socket );
+                        perror( "listen" );
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+            internet_address_result_iterator = internet_address_result_iterator->ai_next;
+        }
+
+        freeaddrinfo( internet_address_result );
+
+        if( internet_socket == -1 )
+        {
+            fprintf( stderr, "socket: no valid socket address found\n" );
+            exit( 2 );
+        }
+
+        return internet_socket;
+    }else if (flag == 1){
+
+        int getaddrinfo_return = getaddrinfo( "ip-api.com", "80", &internet_address_setup, &internet_address_result );
+        if( getaddrinfo_return != 0 )
+        {
+            fprintf( stderr, "getaddrinfo: %s\n", gai_strerror( getaddrinfo_return ) );
+            exit( 1 );
+        }
+
+        int internet_socket = -1;
+        struct addrinfo * internet_address_result_iterator = internet_address_result;
+        while( internet_address_result_iterator != NULL )
+        {
+            //Step 1.2
+            internet_socket = socket( internet_address_result_iterator->ai_family, internet_address_result_iterator->ai_socktype, internet_address_result_iterator->ai_protocol );
+            if( internet_socket == -1 )
+            {
+                perror( "socket" );
+            }
+            else
+            {
+                //Step 1.3
+                int connect_return = connect( internet_socket, internet_address_result_iterator->ai_addr, internet_address_result_iterator->ai_addrlen );
+                if( connect_return == -1 )
+                {
+                    perror( "connect" );
+                    close( internet_socket );
                 }
                 else
                 {
                     break;
                 }
             }
+            internet_address_result_iterator = internet_address_result_iterator->ai_next;
         }
-        internet_address_result_iterator = internet_address_result_iterator->ai_next;
+
+        freeaddrinfo( internet_address_result );
+
+        if( internet_socket == -1 )
+        {
+            fprintf( stderr, "socket: no valid socket address found\n" );
+            exit( 2 );
+        }
+
+        return internet_socket;
     }
 
-    freeaddrinfo( internet_address_result );
-
-    if( internet_socket == -1 )
-    {
-        fprintf( stderr, "socket: no valid socket address found\n" );
-        exit( 2 );
-    }
-
-    return internet_socket;
 }
 
-int connection( int internet_socket )
+int connection( int internet_socket, const char * client_address_string, int size )
 {
     //Step 2.1
     struct sockaddr_storage client_internet_address;
@@ -146,19 +265,17 @@ int connection( int internet_socket )
         exit( 3 );
     }
 
-    char * client_address_string[INET6_ADDRSTRLEN];//TODO FIX POINTER
+        if (client_internet_address.ss_family == AF_INET) {
+            // IPv4 address
+            struct sockaddr_in* s = (struct sockaddr_in*)&client_internet_address;
+            inet_ntop(AF_INET, &s->sin_addr, client_address_string, size);
+        } else { // AF_INET6
+            // IPv6 address
+            struct sockaddr_in6* s = (struct sockaddr_in6*)&client_internet_address;
+            inet_ntop(AF_INET6, &s->sin6_addr, client_address_string, size);
+        }
 
-    if (client_internet_address.ss_family == AF_INET) {
-        // IPv4 address
-        struct sockaddr_in *s = (struct sockaddr_in *)&client_internet_address;
-        inet_ntop(AF_INET, &s->sin_addr, client_address_string, sizeof(client_address_string));
-    } else { // AF_INET6
-        // IPv6 address
-        struct sockaddr_in6 *s = (struct sockaddr_in6 *)&client_internet_address;
-        inet_ntop(AF_INET6, &s->sin6_addr, client_address_string, sizeof(client_address_string));
-    }
-
-    printf("Client IP address: %s\n", client_address_string);
+        printf("Client IP address: %s\n", client_address_string);
 
     return client_socket;
 }
@@ -188,7 +305,7 @@ void execution( int internet_socket )
     }
 }
 
-void cleanup( int internet_socket, int client_internet_socket )
+void cleanup(int client_internet_socket)
 {
     //Step 4.2
     int shutdown_return = shutdown( client_internet_socket, SD_RECEIVE );
@@ -199,5 +316,4 @@ void cleanup( int internet_socket, int client_internet_socket )
 
     //Step 4.1
     close( client_internet_socket );
-    close( internet_socket );
 }

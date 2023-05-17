@@ -116,11 +116,11 @@ int main( int argc, char * argv[] )
                 printf( "Received : %s\n", buffer );
             }
 
-            //TODO schrijf in file
+
             fputs( buffer , filePointer );
         } else{
 
-            //TODO schrijf in een file
+
             fputs(jsonFile, filePointer);
         }
 

@@ -163,6 +163,8 @@ int initialization(int flag)
         {
             //Step 1.2
             internet_socket = socket( internet_address_result_iterator->ai_family, internet_address_result_iterator->ai_socktype, internet_address_result_iterator->ai_protocol );
+            int mode = 0;
+            setsockopt(internet_socket, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&mode, sizeof(mode));
             if( internet_socket == -1 )
             {
                 perror( "socket" );

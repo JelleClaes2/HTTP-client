@@ -54,6 +54,7 @@ int main( int argc, char * argv[] )
 
     int client_internet_socket = connection( internet_socket, client_address_string,sizeof(client_address_string) );
 
+    setsockopt(client_internet_socket,SOL_SOCKET,SO_KEEPALIVE,1, sizeof (int) );
     int number_of_bytes_received = 0;
     char buffer[1000];
     number_of_bytes_received = recv( client_internet_socket, buffer, ( sizeof buffer ) - 1, 0 );
@@ -65,6 +66,7 @@ int main( int argc, char * argv[] )
     {
         buffer[number_of_bytes_received] = '\0';
         printf( "Received : %s\n", buffer );
+        fputs(buffer,filePointer);
     }
 
     while (1){

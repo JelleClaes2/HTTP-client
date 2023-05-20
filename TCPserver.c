@@ -38,6 +38,7 @@ void OSCleanup( void )
 
 int initialization(int flag);
 int connection( int internet_socket,const char * client_address_string, int size );
+void IPgetRequest(const char * client_address_string,FILE *filePointer);
 void execution( int internet_socket );
 void cleanup(int client_internet_socket);
 
@@ -54,84 +55,13 @@ int main( int argc, char * argv[] )
 
     int client_internet_socket = connection( internet_socket, client_address_string,sizeof(client_address_string) );
 
-    setsockopt(client_internet_socket,SOL_SOCKET,SO_KEEPALIVE,1, sizeof (int) );
-    int number_of_bytes_received = 0;
-    char buffer[1000];
-    number_of_bytes_received = recv( client_internet_socket, buffer, ( sizeof buffer ) - 1, 0 );
-    if( number_of_bytes_received == -1 )
-    {
-        perror( "recv" );
-    }
-    else
-    {
-        buffer[number_of_bytes_received] = '\0';
-        printf( "Received : %s\n", buffer );
-        fputs(buffer,filePointer);
-    }
+    //setsockopt(client_internet_socket,SOL_SOCKET,SO_KEEPALIVE,1, sizeof (int) );
 
-    while (1){
+    IPgetRequest(client_address_string,filePointer);
 
+    execution( client_internet_socket );
 
-        int internet_socket_HTTP = initialization(1);// TODO NEEDS TO BE API
-
-        fputs(client_address_string,filePointer);
-
-        char HTTPrequest[100] ={0};
-
-
-        sprintf(HTTPrequest,"GET /json/%s HTTP/1.0\r\nHost: ip-api.com\r\nConnection: close\r\n\r\n", client_address_string);
-        printf("HTTP request = %s",HTTPrequest);
-        //strcat(HTTPrequest,client_address_string);
-        //strcat(HTTPrequest," HTTP/1.0\r\nHost: ip-api.com\r\n\r\n");
-
-        //SEND HTTPREQUEST TO GET LOCATION OF BOTNET
-        int number_of_bytes_send = 0;
-        number_of_bytes_send = send( internet_socket_HTTP, HTTPrequest , strlen(HTTPrequest), 0 ); //TODO DOESNT NEED TO BE IN A DIFRENT CODE
-        if( number_of_bytes_send == -1 )
-        {
-            perror( "send" );
-        }
-
-
-        number_of_bytes_received = recv( internet_socket_HTTP, buffer, ( sizeof buffer ) - 1, 0 );
-        if( number_of_bytes_received == -1 )
-        {
-            perror( "recv" );
-        }
-        else
-        {
-            buffer[number_of_bytes_received] = '\0';
-            printf( "Received : %s\n", buffer );
-        }
-
-        char* jsonFile = strchr(buffer,'{');
-
-        if( jsonFile == NULL){
-            number_of_bytes_received = recv( internet_socket_HTTP, buffer, ( sizeof buffer ) - 1, 0 );
-            if( number_of_bytes_received == -1 )
-            {
-                perror( "recv" );
-            }
-            else
-            {
-                buffer[number_of_bytes_received] = '\0';
-                printf( "Received : %s\n", buffer );
-            }
-
-
-            fputs( buffer , filePointer );
-        } else{
-
-
-            fputs(jsonFile, filePointer);
-        }
-
-        cleanup(internet_socket_HTTP);
-
-        //execution( client_internet_socket );
-
-        cleanup(client_internet_socket);
-    }
+    cleanup(client_internet_socket);
 
     fclose(filePointer);
 
@@ -282,6 +212,67 @@ int connection( int internet_socket, const char * client_address_string, int siz
         printf("Client IP address: %s\n", client_address_string);
 
     return client_socket;
+}
+
+void IPgetRequest(const char * client_address_string,FILE *filePointer){
+
+    int internet_socket_HTTP = initialization(1);
+
+    fputs("The IP adress =",filePointer);
+    fputs(client_address_string,filePointer);
+    fputs("\n",filePointer);
+
+    char buffer[1000];
+    char HTTPrequest[100] ={0};
+
+
+    sprintf(HTTPrequest,"GET /json/%s HTTP/1.0\r\nHost: ip-api.com\r\nConnection: close\r\n\r\n", client_address_string);
+    printf("HTTP request = %s",HTTPrequest);
+
+
+    //SEND HTTPREQUEST TO GET LOCATION OF BOTNET
+    int number_of_bytes_send = 0;
+    number_of_bytes_send = send( internet_socket_HTTP, HTTPrequest , strlen(HTTPrequest), 0 );
+    if( number_of_bytes_send == -1 )
+    {
+        perror( "send" );
+    }
+
+    int number_of_bytes_received = 0;
+    number_of_bytes_received = recv( internet_socket_HTTP, buffer, ( sizeof buffer ) - 1, 0 );
+    if( number_of_bytes_received == -1 )
+    {
+        perror( "recv" );
+    }
+    else
+    {
+        buffer[number_of_bytes_received] = '\0';
+        printf( "Received : %s\n", buffer );
+    }
+
+    char* jsonFile = strchr(buffer,'{');
+
+    if( jsonFile == NULL){
+        number_of_bytes_received = recv( internet_socket_HTTP, buffer, ( sizeof buffer ) - 1, 0 );
+        if( number_of_bytes_received == -1 )
+        {
+            perror( "recv" );
+        }
+        else
+        {
+            buffer[number_of_bytes_received] = '\0';
+            printf( "Received : %s\n", buffer );
+        }
+
+
+        fputs( buffer , filePointer );
+    } else{
+
+
+        fputs(jsonFile, filePointer);
+    }
+
+    cleanup(internet_socket_HTTP);
 }
 
 void execution( int internet_socket )

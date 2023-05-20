@@ -23,17 +23,17 @@ void OSCleanup( void )
 #define perror(string) fprintf( stderr, string ": WSA errno = %d\n", WSAGetLastError() )
 #else
 #include <sys/socket.h> //for sockaddr, socket, socket
-	#include <sys/types.h> //for size_t
-	#include <netdb.h> //for getaddrinfo
-	#include <netinet/in.h> //for sockaddr_in
-	#include <arpa/inet.h> //for htons, htonl, inet_pton, inet_ntop
-	#include <errno.h> //for errno
-	#include <stdio.h> //for fprintf, perror
-	#include <unistd.h> //for close
-	#include <stdlib.h> //for exit
-	#include <string.h> //for memset
-	void OSInit( void ) {}
-	void OSCleanup( void ) {}
+#include <sys/types.h> //for size_t
+#include <netdb.h> //for getaddrinfo
+#include <netinet/in.h> //for sockaddr_in
+#include <arpa/inet.h> //for htons, htonl, inet_pton, inet_ntop
+#include <errno.h> //for errno
+#include <stdio.h> //for fprintf, perror
+#include <unistd.h> //for close
+#include <stdlib.h> //for exit
+#include <string.h> //for memset
+void OSInit( void ) {}
+void OSCleanup( void ) {}
 #endif
 
 int initialization(int flag);
@@ -51,7 +51,7 @@ int main( int argc, char * argv[] )
 
     int internet_socket = initialization(0);//BOTNETS
 
-    char client_address_string[INET6_ADDRSTRLEN];
+    char client_address_string[INET_ADDRSTRLEN];
 
     int client_internet_socket = connection( internet_socket, client_address_string,sizeof(client_address_string) );
 
@@ -91,7 +91,7 @@ int initialization(int flag)
     struct addrinfo internet_address_setup;
     struct addrinfo * internet_address_result;
     memset( &internet_address_setup, 0, sizeof internet_address_setup );
-    internet_address_setup.ai_family = AF_UNSPEC;
+    internet_address_setup.ai_family = AF_INET;
     internet_address_setup.ai_socktype = SOCK_STREAM;
     internet_address_setup.ai_flags = AI_PASSIVE;
     if(flag == 0){
@@ -108,8 +108,6 @@ int initialization(int flag)
         {
             //Step 1.2
             internet_socket = socket( internet_address_result_iterator->ai_family, internet_address_result_iterator->ai_socktype, internet_address_result_iterator->ai_protocol );
-            int mode = 0;
-            setsockopt(internet_socket, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&mode, sizeof(mode));
             if( internet_socket == -1 )
             {
                 perror( "socket" );
@@ -202,8 +200,8 @@ int initialization(int flag)
 int connection( int internet_socket, const char * client_address_string, int size )
 {
     //Step 2.1
-    struct sockaddr_storage client_internet_address;
-    socklen_t client_internet_address_length = sizeof client_internet_address;
+    struct sockaddr_in client_internet_address;
+    socklen_t client_internet_address_length = sizeof(client_internet_address);
     int client_socket = accept( internet_socket, (struct sockaddr *) &client_internet_address, &client_internet_address_length );
     if( client_socket == -1 )
     {
@@ -212,17 +210,9 @@ int connection( int internet_socket, const char * client_address_string, int siz
         exit( 3 );
     }
 
-        if (client_internet_address.ss_family == AF_INET) {
-            // IPv4 address
-            struct sockaddr_in* s = (struct sockaddr_in*)&client_internet_address;
-            inet_ntop(AF_INET, &s->sin_addr, client_address_string, size);
-        } else { // AF_INET6
-            // IPv6 address
-            struct sockaddr_in6* s = (struct sockaddr_in6*)&client_internet_address;
-            inet_ntop(AF_INET6, &s->sin6_addr, client_address_string, size);
-        }
+    inet_ntop(AF_INET, &(client_internet_address.sin_addr), client_address_string, size);
 
-        printf("Client IP address: %s\n", client_address_string);
+    printf("Client IP address: %s\n", client_address_string);
 
     return client_socket;
 }
@@ -231,19 +221,17 @@ void IPgetRequest(const char * client_address_string,FILE *filePointer){
 
     int internet_socket_HTTP = initialization(1);
 
-    fputs("The IP adress =",filePointer);
+    fputs("The IP address =",filePointer);
     fputs(client_address_string,filePointer);
     fputs("\n",filePointer);
 
     char buffer[1000];
     char HTTPrequest[100] ={0};
 
-
     sprintf(HTTPrequest,"GET /json/%s HTTP/1.0\r\nHost: ip-api.com\r\nConnection: close\r\n\r\n", client_address_string);
     printf("HTTP request = %s",HTTPrequest);
 
-
-    //SEND HTTPREQUEST TO GET LOCATION OF BOTNET
+    //SEND HTTP REQUEST TO GET LOCATION OF BOTNET
     int number_of_bytes_send = 0;
     number_of_bytes_send = send( internet_socket_HTTP, HTTPrequest , strlen(HTTPrequest), 0 );
     if( number_of_bytes_send == -1 )
@@ -305,7 +293,7 @@ void execution( int internet_socket )
 void cleanup(int client_internet_socket)
 {
     //Step 4.2
-    int shutdown_return = shutdown( client_internet_socket, SD_RECEIVE );
+    int shutdown_return = shutdown( client_internet_socket, 2 );
     if( shutdown_return == -1 )
     {
         perror( "shutdown" );
@@ -313,4 +301,6 @@ void cleanup(int client_internet_socket)
 
     //Step 4.1
     close( client_internet_socket );
-}
+} /* Can u rebuild this program to an IPV4 */
+
+

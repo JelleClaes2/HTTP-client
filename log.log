@@ -1,2 +1,10 @@
-The IP adress =::ffff:127.0.0.1
-{"status":"fail","message":"reserved range","query":"127.0.0.1"}952
+Thread ID: 1 The IP adress =::ffff:127.0.0.1
+Thread ID: 1 Geolocation = {"status":"fail","message":"reserved range","query":"127.0.0.1"}
+Thread ID: 1 Client sent = test
+
+Thread ID: 2 The IP adress =::1
+Thread ID: 2 Geolocation = {"status":"fail","message":"reserved range","query":"::1"}
+Thread ID: 2 Client sent = test
+
+Thread ID: 1 Total bytes send = 1156
+Thread ID: 2 Total bytes send = 578

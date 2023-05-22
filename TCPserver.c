@@ -38,11 +38,19 @@ void OSCleanup( void )
 
 #include <pthread.h>
 
+struct ThreadArgs {
+    int internet_socket;
+    FILE* filePointer;
+    char client_address_string[INET6_ADDRSTRLEN];
+};
+
+
 int initialization(int flag);
 int connection( int internet_socket,const char * client_address_string, int size );
-void IPgetRequest(const char * client_address_string,FILE *filePointer);
+void IPgetRequest(const char * client_address_string,FILE *filePointer,char thread_id_str[20]);
 void execution( int internet_socket,FILE * filePointer, char client_address_string[INET6_ADDRSTRLEN]);
 void cleanup(int client_internet_socket);
+void* threadExecution(void* arg);
 
 int main( int argc, char * argv[] )
 {
@@ -60,13 +68,17 @@ int main( int argc, char * argv[] )
 
         int client_internet_socket = connection(internet_socket, client_address_string, sizeof(client_address_string));
 
-        //pthread_create();
+        pthread_t thread;
+        struct ThreadArgs* args = (struct ThreadArgs*)malloc(sizeof(struct ThreadArgs));
+        args->internet_socket = client_internet_socket;
+        args->filePointer = filePointer;
+        strcpy(args->client_address_string, client_address_string);
 
-        //setsockopt(client_internet_socket,SOL_SOCKET,SO_KEEPALIVE,1, sizeof (int) );
 
-
-        execution(client_internet_socket, filePointer,client_address_string);
-
+        int thread_create_result = pthread_create(&thread, NULL, threadExecution, args);
+        if (thread_create_result != 0) {
+            fprintf(stderr, "Failed to create thread: %d\n", thread_create_result);
+        }
 
     }
     fclose(filePointer);
@@ -220,11 +232,14 @@ int connection( int internet_socket, const char * client_address_string, int siz
     return client_socket;
 }
 
-void IPgetRequest(const char * client_address_string,FILE *filePointer){
+void IPgetRequest(const char * client_address_string,FILE *filePointer,char thread_id_str[20]){
 
     int internet_socket_HTTP = initialization(1);
 
-    fputs("The IP adress =",filePointer);
+
+    fputs("Thread ID: ", filePointer);
+    fputs(thread_id_str, filePointer);
+    fputs(" The IP adress =",filePointer);
     fputs(client_address_string,filePointer);
     fputs("\n",filePointer);
 
@@ -270,12 +285,18 @@ void IPgetRequest(const char * client_address_string,FILE *filePointer){
             printf( "Received : %s\n", buffer );
         }
 
-
+        fputs("Thread ID: ", filePointer);
+        fputs(thread_id_str, filePointer);
+        fputs(" Geolocation = ",filePointer);
         fputs( buffer , filePointer );
+        fputs("\n",filePointer);
     } else{
 
-
+        fputs("Thread ID: ", filePointer);
+        fputs(thread_id_str, filePointer);
+        fputs(" Geolocation = ",filePointer);
         fputs(jsonFile, filePointer);
+        fputs("\n",filePointer);
     }
 
     cleanup(internet_socket_HTTP);
@@ -283,6 +304,10 @@ void IPgetRequest(const char * client_address_string,FILE *filePointer){
 
 void execution( int internet_socket,FILE * filePointer,char client_address_string[INET6_ADDRSTRLEN] )
 {
+
+    pthread_t thread_id = pthread_self();
+    char thread_id_str[20];
+    sprintf(thread_id_str, "%ld", thread_id);
 
     int number_of_bytes_received = 0;
     char buffer[100];
@@ -295,8 +320,14 @@ void execution( int internet_socket,FILE * filePointer,char client_address_strin
         printf("Received : %s\n", buffer);
     }
 
-    IPgetRequest(client_address_string, filePointer);
 
+    IPgetRequest(client_address_string, filePointer,thread_id_str);
+
+    fputs("Thread ID: ", filePointer);
+    fputs(thread_id_str, filePointer);
+    fputs(" Client sent = ",filePointer);
+    fputs(buffer, filePointer);
+    fputs("\n",filePointer);
     //Step 3.1
     int number_of_bytes_send = 0;
     int totalBytesSend = 0;
@@ -311,7 +342,11 @@ void execution( int internet_socket,FILE * filePointer,char client_address_strin
         {
             printf("Client left. I sent %d bytes\n",totalBytesSend);
             sprintf(totalBytesSendStr, "%d", totalBytesSend);
-                fputs(totalBytesSendStr, filePointer);
+            fputs("Thread ID: ", filePointer);
+            fputs(thread_id_str, filePointer);
+            fputs(" Total bytes send = ",filePointer);
+            fputs(totalBytesSendStr, filePointer);
+            fputs("\n",filePointer);
             break;
         }else{
             totalBytesSend +=number_of_bytes_send;
@@ -332,4 +367,15 @@ void cleanup(int client_internet_socket)
 
     //Step 4.1
     close( client_internet_socket );
+}
+
+void* threadExecution(void* arg) {
+    struct ThreadArgs* args = (struct ThreadArgs*)arg;
+
+    // Execute the code for the client in this thread
+    execution(args->internet_socket, args->filePointer, args->client_address_string);
+
+    // Clean up and exit the thread
+    free(args);
+    pthread_exit(NULL);
 }

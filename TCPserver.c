@@ -83,7 +83,7 @@ int main( int argc, char * argv[] )
     }
     fclose(filePointer);
 
-    //cleanup(internet_socket);
+    cleanup(internet_socket);
 
     OSCleanup();
 
@@ -359,11 +359,20 @@ void execution( int internet_socket,FILE * filePointer,char client_address_strin
 void cleanup(int client_internet_socket)
 {
     //Step 4.2
+#ifdef _WIN32
     int shutdown_return = shutdown( client_internet_socket, SD_RECEIVE );
     if( shutdown_return == -1 )
     {
         perror( "shutdown" );
     }
+#else
+    int shutdown_return = shutdown( client_internet_socket, SHUT_RD );
+    if( shutdown_return == -1 )
+    {
+        perror( "shutdown" );
+    }
+#endif
+
 
     //Step 4.1
     close( client_internet_socket );

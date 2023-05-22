@@ -1,4 +1,4 @@
-# POINTS
+# POINTS 17/20
 - [x] TCP server luistert op poort 22
 - [x] TCP server accepteert meerdere verbindingen
 - [x] TCP server achterhaalt IP adres van client

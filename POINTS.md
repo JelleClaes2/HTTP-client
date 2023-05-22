@@ -1,4 +1,4 @@
-# POINTS 17/20
+# POINTS 19/20
 - [x] TCP server luistert op poort 22
 - [x] TCP server accepteert meerdere verbindingen
 - [x] TCP server achterhaalt IP adres van client
@@ -14,8 +14,8 @@
 - [x] TCP server stuurt zoveel mogelijk gegevens naar de openstaande verbinding
 - [x] TCP server houdt een teller bij hoeveel gegevens succesvol zijn afgeleverd en logt deze bij het sluiten van de verbinding in logs
 - [x] TCP server sluit de verbinding nadat de client de verbinding sluit
-- [ ] TCP server kan meerdere verbindingen simultaan verwerken
+- [x] TCP server kan meerdere verbindingen simultaan verwerken
 - [x] Het geheel werkt volledig zonder crashen en er wordt efficiënt met de resources (i.e. memory en sockets) van de computer gebruik gemaakt
 - [x] code staat professioneel op GITHUB (i.e. meerdere nuttige commits en uitleg)
 - [ ] Het geheel werkt en is beschikbaar op het internet (e.g. thuis m.b.v. NAT of werkt op publieke server)
-- [ ] mooi extra eens de rest werkt: correcte documentatie a.d.h.v. flowchart, maak gebruik van pthread of IP's worden in een look-up tabel bewaard (e.g. linked-list) om herhalende aanvallen te kunnen loggen
+- [x] mooi extra eens de rest werkt: correcte documentatie a.d.h.v. flowchart, maak gebruik van pthread of IP's worden in een look-up tabel bewaard (e.g. linked-list) om herhalende aanvallen te kunnen loggen

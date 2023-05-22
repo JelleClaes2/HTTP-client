@@ -22,4 +22,5 @@
 
 ## uitleg pynq z2 als server
 ![image](https://github.com/JelleClaes2/HTTP-client/assets/114076330/3ddc13ac-6b50-448d-a2ca-219670f71e58)
+
 Ik heb het pynq z2 bord als server opgezet gekregen en mijn code is gecompileerd geraakt. Ik kreeg enkel de a.out niet gerund op het pynq z2 bord. Als dit wel gelukt was was het geheel beschikbaat op het internet.

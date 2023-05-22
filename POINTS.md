@@ -19,3 +19,7 @@
 - [x] code staat professioneel op GITHUB (i.e. meerdere nuttige commits en uitleg)
 - [ ] Het geheel werkt en is beschikbaar op het internet (e.g. thuis m.b.v. NAT of werkt op publieke server)
 - [x] mooi extra eens de rest werkt: correcte documentatie a.d.h.v. flowchart, maak gebruik van pthread of IP's worden in een look-up tabel bewaard (e.g. linked-list) om herhalende aanvallen te kunnen loggen
+
+## uitleg pynq z2 als server
+![image](https://github.com/JelleClaes2/HTTP-client/assets/114076330/3ddc13ac-6b50-448d-a2ca-219670f71e58)
+Ik heb het pynq z2 bord als server opgezet gekregen en mijn code is gecompileerd geraakt. Ik kreeg enkel de a.out niet gerund op het pynq z2 bord. Als dit wel gelukt was was het geheel beschikbaat op het internet.

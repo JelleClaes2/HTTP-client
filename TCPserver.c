@@ -48,12 +48,13 @@ int main( int argc, char * argv[] )
     FILE *filePointer =fopen( "log.log", "w" );
 
     OSInit();
+    int internet_socket = initialization(0);//BOTNETS
+
+    char client_address_string[INET6_ADDRSTRLEN];
 
     while(1) {
 
-        int internet_socket = initialization(0);//BOTNETS
 
-        char client_address_string[INET6_ADDRSTRLEN];
 
         int client_internet_socket = connection(internet_socket, client_address_string, sizeof(client_address_string));
 
@@ -292,19 +293,23 @@ void execution( int internet_socket,FILE * filePointer )
     //Step 3.1
     int number_of_bytes_send = 0;
     int totalBytesSend = 0;
-    char buffer[1000];
+
+    char totalBytesSendStr[20];
+
 
     while(1){
         number_of_bytes_send = send( internet_socket, "I like trains!!!\n", 17, 0 );
         if( number_of_bytes_send == -1 )
         {
             printf("Client left. I sent %d bytes\n",totalBytesSend);
+            sprintf(totalBytesSendStr, "%d", totalBytesSend);
+                fputs(totalBytesSendStr, filePointer);
             break;
         }else{
             totalBytesSend +=number_of_bytes_send;
         }
     }
-    fputs(totalBytesSend,filePointer);
+
 }
 
 void cleanup(int client_internet_socket)

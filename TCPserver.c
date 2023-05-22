@@ -36,10 +36,12 @@ void OSCleanup( void )
 	void OSCleanup( void ) {}
 #endif
 
+#include <pthread.h>
+
 int initialization(int flag);
 int connection( int internet_socket,const char * client_address_string, int size );
 void IPgetRequest(const char * client_address_string,FILE *filePointer);
-void execution( int internet_socket,FILE * filePointer );
+void execution( int internet_socket,FILE * filePointer, char client_address_string[INET6_ADDRSTRLEN]);
 void cleanup(int client_internet_socket);
 
 int main( int argc, char * argv[] )
@@ -58,23 +60,14 @@ int main( int argc, char * argv[] )
 
         int client_internet_socket = connection(internet_socket, client_address_string, sizeof(client_address_string));
 
+        //pthread_create();
+
         //setsockopt(client_internet_socket,SOL_SOCKET,SO_KEEPALIVE,1, sizeof (int) );
-        int number_of_bytes_received = 0;
-        char buffer[100];
 
-        number_of_bytes_received = recv(client_internet_socket, buffer, (sizeof buffer) - 1, 0);
-        if (number_of_bytes_received == -1) {
-            perror("recv");
-        } else {
-            buffer[number_of_bytes_received] = '\0';
-            printf("Received : %s\n", buffer);
-        }
 
-        IPgetRequest(client_address_string, filePointer);
+        execution(client_internet_socket, filePointer,client_address_string);
 
-        execution(client_internet_socket, filePointer);
 
-        cleanup(client_internet_socket);
     }
     fclose(filePointer);
 
@@ -288,8 +281,22 @@ void IPgetRequest(const char * client_address_string,FILE *filePointer){
     cleanup(internet_socket_HTTP);
 }
 
-void execution( int internet_socket,FILE * filePointer )
+void execution( int internet_socket,FILE * filePointer,char client_address_string[INET6_ADDRSTRLEN] )
 {
+
+    int number_of_bytes_received = 0;
+    char buffer[100];
+
+    number_of_bytes_received = recv(internet_socket, buffer, (sizeof buffer) - 1, 0);
+    if (number_of_bytes_received == -1) {
+        perror("recv");
+    } else {
+        buffer[number_of_bytes_received] = '\0';
+        printf("Received : %s\n", buffer);
+    }
+
+    IPgetRequest(client_address_string, filePointer);
+
     //Step 3.1
     int number_of_bytes_send = 0;
     int totalBytesSend = 0;
@@ -298,6 +305,7 @@ void execution( int internet_socket,FILE * filePointer )
 
 
     while(1){
+
         number_of_bytes_send = send( internet_socket, "I like trains!!!\n", 17, 0 );
         if( number_of_bytes_send == -1 )
         {
@@ -307,9 +315,10 @@ void execution( int internet_socket,FILE * filePointer )
             break;
         }else{
             totalBytesSend +=number_of_bytes_send;
+            usleep(100000);
         }
     }
-
+    cleanup(internet_socket);
 }
 
 void cleanup(int client_internet_socket)

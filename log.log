@@ -1,3 +1,2 @@
-The IP adress =::ffff:192.168.0.211
-{"status":"fail","message":"private range","query":"192.168.0.211"}1309799The IP adress =::ffff:192.168.0.211
-{"status":"fail","message":"private range","query":"192.168.0.211"}2487032
+The IP adress =::ffff:127.0.0.1
+{"status":"fail","message":"reserved range","query":"127.0.0.1"}952

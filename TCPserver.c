@@ -83,7 +83,7 @@ int main( int argc, char * argv[] )
     }
     fclose(filePointer);
 
-    cleanup(internet_socket);
+    //cleanup(internet_socket);
 
     OSCleanup();
 

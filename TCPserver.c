@@ -55,35 +55,39 @@ void* threadExecution(void* arg);
 int main( int argc, char * argv[] )
 {
 
-    FILE *filePointer =fopen( "log.log", "w" );
+    FILE *filePointer =fopen( "log.log", "w" ); //open the log.log file in write mode
 
-    OSInit();
-    int internet_socket = initialization(0);//BOTNETS
+    OSInit();// initialize the OS
 
-    char client_address_string[INET6_ADDRSTRLEN];
+    int internet_socket = initialization(0);//open socket for botnets
+
+    char client_address_string[INET6_ADDRSTRLEN];//string to store IP address
 
     while(1) {
 
 
 
-        int client_internet_socket = connection(internet_socket, client_address_string, sizeof(client_address_string));
+        int client_internet_socket = connection(internet_socket, client_address_string, sizeof(client_address_string)); //let a new client connect
 
-        pthread_t thread;
+        pthread_t thread;//Variable to store identifier for new thread
+
+        //allocate memory for the ThreadArgs struct
         struct ThreadArgs* args = (struct ThreadArgs*)malloc(sizeof(struct ThreadArgs));
-        args->internet_socket = client_internet_socket;
-        args->filePointer = filePointer;
-        strcpy(args->client_address_string, client_address_string);
+
+        args->internet_socket = client_internet_socket;//assign the value of client_internet_socket to the member of the struct
+        args->filePointer = filePointer; // assign the value of the filePointer to the struct
+        strcpy(args->client_address_string, client_address_string);//copy the ip address in the stuct
 
 
-        int thread_create_result = pthread_create(&thread, NULL, threadExecution, args);
+        int thread_create_result = pthread_create(&thread, NULL, threadExecution, args); //create a new thread that runs threadExecution
         if (thread_create_result != 0) {
             fprintf(stderr, "Failed to create thread: %d\n", thread_create_result);
         }
 
     }
-    fclose(filePointer);
+    fclose(filePointer); //close file
 
-    cleanup(internet_socket);
+    cleanup(internet_socket); //cleanup
 
     OSCleanup();
 
@@ -99,8 +103,8 @@ int initialization(int flag)
     internet_address_setup.ai_family = AF_UNSPEC;
     internet_address_setup.ai_socktype = SOCK_STREAM;
     internet_address_setup.ai_flags = AI_PASSIVE;
-    if(flag == 0){
-        int getaddrinfo_return = getaddrinfo( NULL, "22", &internet_address_setup, &internet_address_result );
+    if(flag == 0){ // initialize fot the client
+        int getaddrinfo_return = getaddrinfo( NULL, "22", &internet_address_setup, &internet_address_result ); //listen on port 22
         if( getaddrinfo_return != 0 )
         {
             fprintf( stderr, "getaddrinfo: %s\n", gai_strerror( getaddrinfo_return ) );
@@ -155,7 +159,7 @@ int initialization(int flag)
         }
 
         return internet_socket;
-    }else if (flag == 1){
+    }else if (flag == 1){ // initialize fot the API
 
         int getaddrinfo_return = getaddrinfo( "ip-api.com", "80", &internet_address_setup, &internet_address_result );
         if( getaddrinfo_return != 0 )
@@ -217,6 +221,8 @@ int connection( int internet_socket, const char * client_address_string, int siz
         exit( 3 );
     }
 
+
+        //get IP address from client
         if (client_internet_address.ss_family == AF_INET) {
             // IPv4 address
             struct sockaddr_in* s = (struct sockaddr_in*)&client_internet_address;
@@ -234,12 +240,13 @@ int connection( int internet_socket, const char * client_address_string, int siz
 
 void IPgetRequest(const char * client_address_string,FILE *filePointer,char thread_id_str[20]){
 
-    int internet_socket_HTTP = initialization(1);
+    int internet_socket_HTTP = initialization(1); //initialize API socket
 
 
+    //print IP address in log file
     fputs("Thread ID: ", filePointer);
     fputs(thread_id_str, filePointer);
-    fputs(" The IP adress =",filePointer);
+    fputs(" The IP address =",filePointer);
     fputs(client_address_string,filePointer);
     fputs("\n",filePointer);
 
@@ -247,6 +254,7 @@ void IPgetRequest(const char * client_address_string,FILE *filePointer,char thre
     char HTTPrequest[100] ={0};
 
 
+    //make HTTPrequest
     sprintf(HTTPrequest,"GET /json/%s HTTP/1.0\r\nHost: ip-api.com\r\nConnection: close\r\n\r\n", client_address_string);
     printf("HTTP request = %s",HTTPrequest);
 
@@ -259,6 +267,7 @@ void IPgetRequest(const char * client_address_string,FILE *filePointer,char thre
         perror( "send" );
     }
 
+    //receive json data and cut the HTTP header off
     int number_of_bytes_received = 0;
     number_of_bytes_received = recv( internet_socket_HTTP, buffer, ( sizeof buffer ) - 1, 0 );
     if( number_of_bytes_received == -1 )
@@ -285,6 +294,7 @@ void IPgetRequest(const char * client_address_string,FILE *filePointer,char thre
             printf( "Received : %s\n", buffer );
         }
 
+        //put geolocation in file
         fputs("Thread ID: ", filePointer);
         fputs(thread_id_str, filePointer);
         fputs(" Geolocation = ",filePointer);
@@ -292,6 +302,7 @@ void IPgetRequest(const char * client_address_string,FILE *filePointer,char thre
         fputs("\n",filePointer);
     } else{
 
+        //put geolocation in file
         fputs("Thread ID: ", filePointer);
         fputs(thread_id_str, filePointer);
         fputs(" Geolocation = ",filePointer);
@@ -299,16 +310,19 @@ void IPgetRequest(const char * client_address_string,FILE *filePointer,char thre
         fputs("\n",filePointer);
     }
 
+    //clean HTTP socket
     cleanup(internet_socket_HTTP);
 }
 
 void execution( int internet_socket,FILE * filePointer,char client_address_string[INET6_ADDRSTRLEN] )
 {
 
+    //get the thread_id and put it in the string
     pthread_t thread_id = pthread_self();
     char thread_id_str[20];
     sprintf(thread_id_str, "%ld", thread_id);
 
+    //receive a message
     int number_of_bytes_received = 0;
     char buffer[100];
 
@@ -320,9 +334,10 @@ void execution( int internet_socket,FILE * filePointer,char client_address_strin
         printf("Received : %s\n", buffer);
     }
 
-
+    // get the geolocation
     IPgetRequest(client_address_string, filePointer,thread_id_str);
 
+    //put the message that the client sent in the log file
     fputs("Thread ID: ", filePointer);
     fputs(thread_id_str, filePointer);
     fputs(" Client sent = ",filePointer);
@@ -337,7 +352,10 @@ void execution( int internet_socket,FILE * filePointer,char client_address_strin
 
     while(1){
 
+        //UNO REVERSE TIME
         number_of_bytes_send = send( internet_socket, "I like trains!!!\n", 17, 0 );
+
+        //check if client left and put number of bytes send in the log file
         if( number_of_bytes_send == -1 )
         {
             printf("Client left. I sent %d bytes\n",totalBytesSend);
@@ -350,7 +368,7 @@ void execution( int internet_socket,FILE * filePointer,char client_address_strin
             break;
         }else{
             totalBytesSend +=number_of_bytes_send;
-            usleep(100000);
+            usleep(100000);// Just here to test or i wil attack myself to hard
         }
     }
     cleanup(internet_socket);
@@ -359,13 +377,13 @@ void execution( int internet_socket,FILE * filePointer,char client_address_strin
 void cleanup(int client_internet_socket)
 {
     //Step 4.2
-#ifdef _WIN32
+#ifdef _WIN32 //cleanup for windows
     int shutdown_return = shutdown( client_internet_socket, SD_RECEIVE );
     if( shutdown_return == -1 )
     {
         perror( "shutdown" );
     }
-#else
+#else // cleanup for linux
     int shutdown_return = shutdown( client_internet_socket, SHUT_RD );
     if( shutdown_return == -1 )
     {
@@ -378,11 +396,12 @@ void cleanup(int client_internet_socket)
     close( client_internet_socket );
 }
 
+//function for thread execution
 void* threadExecution(void* arg) {
     struct ThreadArgs* args = (struct ThreadArgs*)arg;
 
     // Execute the code for the client in this thread
-    execution(args->internet_socket, args->filePointer, args->client_address_string);
+    execution(args->internet_socket, args->filePointer, args->client_address_string); // call the execution for each client 
 
     // Clean up and exit the thread
     free(args);
